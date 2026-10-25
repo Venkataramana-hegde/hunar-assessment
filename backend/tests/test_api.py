@@ -1,5 +1,9 @@
 import os
+
+# Pin the test environment before the app reads its configuration, so a local
+# .env with real credentials never affects the test run.
 os.environ["DATABASE_URL"] = "sqlite:///./test.db"
+os.environ["PROVIDER_WEBHOOK_SECRET"] = "test-webhook-secret"
 from fastapi.testclient import TestClient
 from app.main import app
 
@@ -40,7 +44,7 @@ def test_duplicate_and_out_of_order_webhooks_are_safe():
             record.status = "sent"
             db.commit()
 
-        headers = {"x-webhook-secret": "local-webhook-secret"}
+        headers = {"x-webhook-secret": "test-webhook-secret"}
         body = {"provider_id": provider_id, "status": "delivered"}
         assert client.post("/api/webhooks/provider", json=body, headers=headers).status_code == 204
         # The same event again must not change anything.
