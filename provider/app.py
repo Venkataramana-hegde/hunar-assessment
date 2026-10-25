@@ -1,11 +1,20 @@
 import asyncio
 import os
 import uuid
+from pathlib import Path
 import httpx
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv(Path(__file__).resolve().parent / ".env")
+except ModuleNotFoundError:  # python-dotenv is optional in production
+    pass
+
 app = FastAPI(title="Simulated Communication Provider")
+# Must match PROVIDER_WEBHOOK_SECRET on the backend, or callbacks are rejected.
 SECRET = os.getenv("WEBHOOK_SECRET", "local-webhook-secret")
 class SendRequest(BaseModel):
     to: str
