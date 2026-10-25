@@ -1,0 +1,50 @@
+# Render blueprint for the backend API and the dummy communication provider.
+# The frontend is deployed separately on Vercel.
+services:
+  - type: web
+    name: candidate-comms-provider
+    runtime: python
+    rootDir: provider
+    plan: free
+    region: singapore
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: WEBHOOK_SECRET
+        sync: false
+
+  - type: web
+    name: candidate-comms-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    region: singapore
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      # Neon pooled connection string.
+      - key: DATABASE_URL
+        sync: false
+      # Must match WEBHOOK_SECRET on the provider.
+      - key: PROVIDER_WEBHOOK_SECRET
+        sync: false
+      - key: PROVIDER_URL
+        fromService:
+          type: web
+          name: candidate-comms-provider
+          property: host
+      # This service's own public URL, sent to the provider as the callback.
+      - key: APP_BASE_URL
+        fromService:
+          type: web
+          name: candidate-comms-api
+          property: host
+      # The Vercel frontend URL.
+      - key: CORS_ORIGINS
+        sync: false

@@ -17,10 +17,27 @@ from .schemas import (
     WebhookUpdate,
 )
 
-PROVIDER_URL = os.getenv("PROVIDER_URL", "http://localhost:8001")
-APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:8000")
+def public_url(name: str, default: str) -> str:
+    """Read a service URL, tolerating the forms hosting platforms hand out.
+
+    Render exposes another service's address as a bare host name, and trailing
+    slashes are easy to paste in by mistake. Both break the HTTP client, so the
+    scheme is added when missing and the trailing slash is removed.
+    """
+    value = (os.getenv(name) or "").strip().rstrip("/") or default
+    if "://" not in value:
+        value = f"https://{value}"
+    return value
+
+
+PROVIDER_URL = public_url("PROVIDER_URL", "http://localhost:8001")
+APP_BASE_URL = public_url("APP_BASE_URL", "http://localhost:8000")
 WEBHOOK_SECRET = os.getenv("PROVIDER_WEBHOOK_SECRET", "local-webhook-secret")
-CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+CORS_ORIGINS = [
+    origin.strip().rstrip("/")
+    for origin in (os.getenv("CORS_ORIGINS") or "http://localhost:3000").split(",")
+    if origin.strip()
+]
 VALID_TRANSITIONS = {
     "queued": {"sent", "failed"},
     "sent": {"delivered", "failed"},
