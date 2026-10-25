@@ -1,5 +1,6 @@
 import os
-from sqlalchemy import create_engine
+import socket
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./candidate_comms.db")
@@ -24,6 +25,26 @@ else:
         pool_size=5,
         max_overflow=5,
     )
+
+    @event.listens_for(engine, "do_connect")
+    def prefer_ipv4(dialect, connection_record, cargs, cparams):
+        """Resolve the database host to IPv4 before connecting.
+
+        Managed Postgres providers publish both A and AAAA records, while many
+        container platforms have no outbound IPv6 route. The client otherwise
+        picks the IPv6 address and fails with "network is unreachable". The host
+        name is kept so TLS and SNI still verify against it.
+        """
+        host = cparams.get("host")
+        if not host or cparams.get("hostaddr"):
+            return None
+        try:
+            addresses = socket.getaddrinfo(host, None, socket.AF_INET, socket.SOCK_STREAM)
+        except socket.gaierror:
+            return None  # Leave resolution to the driver.
+        if addresses:
+            cparams["hostaddr"] = addresses[0][4][0]
+        return None
 
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
