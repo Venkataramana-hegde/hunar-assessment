@@ -109,7 +109,7 @@ Use `pnpm build` as the frontend build command. Use `pip install -r requirements
 Set these backend variables:
 
 ```env
-DATABASE_URL=sqlite:////data/app.db
+DATABASE_URL=postgresql://USER:PASSWORD@HOST.neon.tech/neondb?sslmode=require
 PROVIDER_URL=https://YOUR_PROVIDER_DOMAIN
 APP_BASE_URL=https://YOUR_BACKEND_DOMAIN
 PROVIDER_WEBHOOK_SECRET=USE_A_RANDOM_SECRET
@@ -126,11 +126,23 @@ NEXT_PUBLIC_API_URL=https://YOUR_BACKEND_DOMAIN
 WEBHOOK_SECRET=USE_THE_SAME_RANDOM_SECRET
 ```
 
-Attach persistent storage at `/data` to the backend so the SQLite database survives redeployments.
+### Database
+
+The backend runs on SQLite by default, which keeps local setup to zero steps. Any
+Postgres URL works instead, including serverless providers such as Neon: set
+`DATABASE_URL` to the connection string and the tables are created on first start.
+`postgres://` and `postgresql://` URLs are normalised onto psycopg automatically.
+
+Postgres is the better choice for a deployment, because it needs no persistent
+volume and tolerates more than one backend instance. To stay on SQLite instead,
+set `DATABASE_URL=sqlite:////data/app.db` and attach persistent storage at `/data`,
+or the database is lost on every redeployment.
 
 ## Main decisions
 
 - FastAPI is used because the assignment clarification allows Django or FastAPI.
+- SQLAlchemy keeps the data layer database-agnostic, so the same code runs on
+  SQLite locally and on hosted Postgres in a deployment.
 - Every bulk recipient gets a separate message record, so one failure does not stop other messages.
 - Duplicate webhook updates are safe and do not change an already-current status.
 - Phone numbers use international format, such as `+919876543210`.
