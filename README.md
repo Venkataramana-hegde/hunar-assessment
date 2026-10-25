@@ -166,4 +166,4 @@ Not implemented: message templates, scheduled messages, and multiple providers.
 
 ## Design
 
-The Figma export belongs in `design/`. The core screens follow that design.
+The Figma file is in `design/`. The core screens follow it.
