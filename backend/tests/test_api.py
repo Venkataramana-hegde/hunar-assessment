@@ -71,3 +71,38 @@ def test_permanent_failures_cannot_be_retried():
             record.retryable = False
             db.commit()
         assert client.post(f"/api/messages/{message['id']}/retry").status_code == 409
+
+
+def test_template_crud_and_duplicate_name():
+    with TestClient(app) as client:
+        payload = {"name": "Interview invite", "body": "Hi {{first_name}}, your interview is tomorrow."}
+        created = client.post("/api/templates", json=payload)
+        assert created.status_code == 201
+        template_id = created.json()["id"]
+
+        assert client.post("/api/templates", json=payload).status_code == 409
+        assert any(t["id"] == template_id for t in client.get("/api/templates").json())
+
+        edited = client.put(
+            f"/api/templates/{template_id}",
+            json={"name": "Interview invite", "body": "Hi {{name}}, see you soon."},
+        )
+        assert edited.status_code == 200
+        assert edited.json()["body"] == "Hi {{name}}, see you soon."
+
+        assert client.delete(f"/api/templates/{template_id}").status_code == 204
+        assert client.delete(f"/api/templates/{template_id}").status_code == 404
+
+
+def test_each_recipient_gets_its_own_personalised_body():
+    with TestClient(app) as client:
+        candidates = client.get("/api/candidates").json()[:2]
+        ids = [c["id"] for c in candidates]
+        client.post(
+            "/api/messages",
+            json={"candidate_ids": ids, "body": "Hi {{first_name}}, reach us on {{email}}."},
+        )
+        sent = {m["candidate_id"]: m["body"] for m in client.get("/api/messages").json()[: len(ids)]}
+        for candidate in candidates:
+            expected = f"Hi {candidate['name'].split()[0]}, reach us on {candidate['email']}."
+            assert sent[candidate["id"]] == expected

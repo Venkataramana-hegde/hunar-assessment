@@ -30,3 +30,13 @@ class Message(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, onupdate=now)
     candidate: Mapped[Candidate] = relationship(back_populates="messages")
 
+
+class Template(Base):
+    """A reusable message body, with placeholders such as {{name}}."""
+
+    __tablename__ = "templates"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(80), unique=True, index=True)
+    body: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, onupdate=now)

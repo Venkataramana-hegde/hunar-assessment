@@ -108,7 +108,7 @@ pnpm build
 - `frontend/lib/api.ts` contains frontend API calls and shared response types.
 - `backend/app/models.py` contains database models.
 - `backend/app/schemas.py` contains request validation and response schemas.
-- `backend/app/main.py` contains the API endpoints and messaging flow.
+- `backend/app/main.py` contains the API endpoints, templating and messaging flow.
 - `provider/app.py` contains the independent dummy provider.
 
 ## Deploy
@@ -203,12 +203,17 @@ Core requirements:
 
 Bonus features:
 
+- **Message templates** — reusable messages managed on their own page, with
+  `{{name}}`, `{{first_name}}`, `{{email}}` and `{{phone}}` placeholders. The
+  backend renders the body separately for each recipient, so a bulk send gives
+  every candidate their own personalised message, and that is what is stored in
+  the history. The compose dialog previews the result before sending.
 - **Provider health** — a live operational indicator with sent, delivered, and
   failed counts.
 - **Retry failed messages** — retries are offered only for failures the provider
   reports as temporary, and are refused for permanent ones.
 
-Not implemented: message templates, scheduled messages, and multiple providers.
+Not implemented: scheduled messages and multiple communication providers.
 
 ## Design
 

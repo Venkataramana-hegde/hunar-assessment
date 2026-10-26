@@ -7,13 +7,15 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 from .database import Base, engine, get_db, SessionLocal
-from .models import Candidate, Message
+from .models import Candidate, Message, Template
 from .schemas import (
     CandidateCreate,
     CandidateOut,
     MessageCreate,
     MessageOut,
     MessageWithCandidate,
+    TemplateCreate,
+    TemplateOut,
     WebhookUpdate,
 )
 
@@ -176,6 +178,70 @@ async def dispatch(message_id: int):
             message.retryable = True
         db.commit()
 
+PLACEHOLDERS = ("name", "first_name", "email", "phone")
+
+
+def personalise(body: str, candidate: Candidate) -> str:
+    """Replace {{placeholder}} with this candidate's details.
+
+    Each recipient of a bulk send gets its own rendered body, so the message
+    that is stored and delivered is the one the candidate actually receives.
+    Unknown placeholders are left untouched rather than silently emptied.
+    """
+    values = {
+        "name": candidate.name,
+        "first_name": candidate.name.split()[0],
+        "email": candidate.email,
+        "phone": candidate.phone,
+    }
+    for key in PLACEHOLDERS:
+        body = body.replace("{{" + key + "}}", values[key])
+    return body
+
+
+@app.get("/api/templates", response_model=list[TemplateOut])
+def templates(db: Session = Depends(get_db)):
+    return db.scalars(select(Template).order_by(Template.updated_at.desc())).all()
+
+
+@app.post("/api/templates", response_model=TemplateOut, status_code=201)
+def add_template(payload: TemplateCreate, db: Session = Depends(get_db)):
+    template = Template(**payload.model_dump())
+    db.add(template)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(409, "A template with this name already exists")
+    db.refresh(template)
+    return template
+
+
+@app.put("/api/templates/{template_id}", response_model=TemplateOut)
+def edit_template(template_id: int, payload: TemplateCreate, db: Session = Depends(get_db)):
+    template = db.get(Template, template_id)
+    if not template:
+        raise HTTPException(404, "Template not found")
+    template.name = payload.name
+    template.body = payload.body
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(409, "A template with this name already exists")
+    db.refresh(template)
+    return template
+
+
+@app.delete("/api/templates/{template_id}", status_code=204)
+def remove_template(template_id: int, db: Session = Depends(get_db)):
+    template = db.get(Template, template_id)
+    if not template:
+        raise HTTPException(404, "Template not found")
+    db.delete(template)
+    db.commit()
+
+
 @app.post("/api/messages", response_model=list[MessageOut], status_code=202)
 def send(payload: MessageCreate, tasks: BackgroundTasks, db: Session = Depends(get_db)):
     ids = list(dict.fromkeys(payload.candidate_ids))
@@ -183,7 +249,14 @@ def send(payload: MessageCreate, tasks: BackgroundTasks, db: Session = Depends(g
     missing = [i for i in ids if i not in found]
     if missing:
         raise HTTPException(404, f"Candidates not found: {missing}")
-    messages = [Message(candidate_id=i, body=payload.body) for i in ids]
+    candidates_by_id = {
+        candidate.id: candidate
+        for candidate in db.scalars(select(Candidate).where(Candidate.id.in_(ids)))
+    }
+    messages = [
+        Message(candidate_id=i, body=personalise(payload.body, candidates_by_id[i]))
+        for i in ids
+    ]
     db.add_all(messages)
     db.commit()
 

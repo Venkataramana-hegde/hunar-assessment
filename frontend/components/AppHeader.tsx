@@ -50,8 +50,16 @@ export default function AppHeader() {
             </Box>
             <Typography fontWeight={750}>Candidate Connect</Typography>
           </Box>
-          <Button component={Link} href="/" color="inherit" sx={{ mr: 2 }}>
+          <Button component={Link} href="/" color="inherit">
             Candidates
+          </Button>
+          <Button
+            component={Link}
+            href="/templates"
+            color="inherit"
+            sx={{ mr: 2 }}
+          >
+            Templates
           </Button>
           <Avatar
             sx={{

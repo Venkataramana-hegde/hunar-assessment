@@ -19,6 +19,30 @@ export type Message = {
   updated_at: string;
   candidate?: Candidate;
 };
+export type Template = {
+  id: number;
+  name: string;
+  body: string;
+  created_at: string;
+  updated_at: string;
+};
+// Placeholders the backend substitutes for each recipient.
+export const PLACEHOLDERS = ["name", "first_name", "email", "phone"] as const;
+
+export function previewBody(body: string, candidate?: Candidate) {
+  if (!candidate) return body;
+  const values: Record<string, string> = {
+    name: candidate.name,
+    first_name: candidate.name.split(" ")[0],
+    email: candidate.email,
+    phone: candidate.phone,
+  };
+  return PLACEHOLDERS.reduce(
+    (text, key) => text.split(`{{${key}}}`).join(values[key]),
+    body,
+  );
+}
+
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API}${path}`, {
@@ -57,6 +81,19 @@ export const api = {
     }),
   retry: (id: number) =>
     request<Message>(`/api/messages/${id}/retry`, { method: "POST" }),
+  templates: () => request<Template[]>("/api/templates"),
+  createTemplate: (data: { name: string; body: string }) =>
+    request<Template>("/api/templates", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  updateTemplate: (id: number, data: { name: string; body: string }) =>
+    request<Template>(`/api/templates/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  deleteTemplate: (id: number) =>
+    request<void>(`/api/templates/${id}`, { method: "DELETE" }),
   health: () =>
     request<{
       operational: boolean;

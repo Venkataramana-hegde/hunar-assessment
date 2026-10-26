@@ -18,6 +18,26 @@ class CandidateOut(CandidateCreate):
     id: int
     created_at: datetime
 
+class TemplateCreate(BaseModel):
+    name: str = Field(min_length=2, max_length=80)
+    body: str = Field(min_length=1, max_length=1000)
+
+    @field_validator("name", "body")
+    @classmethod
+    def no_blank(cls, value):
+        value = value.strip()
+        if not value:
+            raise ValueError("This field cannot be blank")
+        return value
+
+
+class TemplateOut(TemplateCreate):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+
 class MessageCreate(BaseModel):
     candidate_ids: list[int] = Field(min_length=1, max_length=100)
     body: str = Field(min_length=1, max_length=1000)
