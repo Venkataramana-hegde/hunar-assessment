@@ -10,14 +10,18 @@ A candidate communication platform for recruiters. It supports candidate managem
 | Backend API | <https://candidate-comms-api.onrender.com/docs> |
 | Dummy provider | <https://candidate-comms-provider.onrender.com/health> |
 
-The backend and the provider run on a free tier that suspends idle services, so
-the first request after a quiet period can take up to a minute while they wake.
-Later requests are immediate.
+> **Please allow up to a minute on first load.** The backend and the dummy
+> provider run on Render's free tier, which suspends a service after about
+> fifteen minutes of inactivity. The first request after a quiet period wakes
+> them, which can take twenty to sixty seconds, and the provider health panel
+> may briefly read "unavailable" while that happens. Everything is immediate
+> once both services are awake. Opening the two service links above first is
+> the quickest way to warm them.
 
 ## Tech stack
 
 - Frontend: Next.js, React, TypeScript, Material UI
-- Backend: Python, FastAPI, SQLAlchemy, SQLite
+- Backend: Python, FastAPI, SQLAlchemy, SQLite locally and Postgres (Neon) when deployed
 - Provider: a separate FastAPI dummy communication service
 
 ```text
@@ -69,19 +73,20 @@ The backend creates the SQLite database and adds five demo candidates on its fir
 The dummy provider decides the outcome from the recipient's phone number, so every
 failure case can be demonstrated on demand.
 
-| Candidate | Phone ends with | Result |
+| Candidate | Phone number ends with | What the recruiter sees |
 | --- | --- | --- |
-| Rahul, Priya, Neha | anything else | Sent → Delivered → Read |
-| Amit Kumar | `1234` | Temporary provider failure, retryable |
-| Kavya Nair | `7777` | Rate limited, retryable |
+| Rahul Sharma, Priya Shah, Neha Patel | any other digits | Sent, then Delivered, then Read |
+| Amit Kumar | `1234` | Temporary provider failure, can be retried |
+| Kavya Nair | `7777` | Rate limited, can be retried |
 | Rohan Mehta | `8888` | Delivery failed, permanent |
 | Vikram Rao | `0000` | Invalid recipient, permanent |
 
-Stopping the provider service makes the next send fail as "communication service
-unavailable" and flips the provider health indicator.
+A sixth case, "communication service unavailable", happens whenever the provider
+cannot be reached: stop the provider locally, or send while it is suspended on a
+free tier. The provider health indicator turns red at the same time.
 
-Select Rahul, Amit, Kavya, and Rohan together to see the bulk results screen show
-one independent outcome per candidate.
+Selecting Rahul, Amit, Kavya, and Rohan together is the quickest way to see the
+bulk results screen report a different outcome for each candidate.
 
 ## Tests and checks
 

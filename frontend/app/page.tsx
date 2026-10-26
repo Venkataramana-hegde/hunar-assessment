@@ -164,6 +164,12 @@ export default function Dashboard() {
               />
               Provider {health.operational ? "operational" : "unavailable"}
             </Typography>
+            {!health.operational && (
+              <Typography variant="body2" color="text.secondary">
+                The service may be waking from sleep, which can take up to a
+                minute.
+              </Typography>
+            )}
             <Typography variant="body2" color="text.secondary">
               Messages <b>{health.total}</b>
             </Typography>
