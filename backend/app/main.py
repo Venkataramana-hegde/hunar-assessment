@@ -35,7 +35,7 @@ def public_url(name: str, default: str) -> str:
 PROVIDER_URL = public_url("PROVIDER_URL", "http://localhost:8001")
 APP_BASE_URL = public_url("APP_BASE_URL", "http://localhost:8000")
 WEBHOOK_SECRET = os.getenv("PROVIDER_WEBHOOK_SECRET", "local-webhook-secret")
-SEND_TIMEOUT = float(os.getenv("PROVIDER_SEND_TIMEOUT", "30"))
+SEND_TIMEOUT = float(os.getenv("PROVIDER_SEND_TIMEOUT", "60"))
 HEALTH_TIMEOUT = float(os.getenv("PROVIDER_HEALTH_TIMEOUT", "10"))
 CORS_ORIGINS = [
     origin.strip().rstrip("/")
