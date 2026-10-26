@@ -33,6 +33,8 @@ def public_url(name: str, default: str) -> str:
 PROVIDER_URL = public_url("PROVIDER_URL", "http://localhost:8001")
 APP_BASE_URL = public_url("APP_BASE_URL", "http://localhost:8000")
 WEBHOOK_SECRET = os.getenv("PROVIDER_WEBHOOK_SECRET", "local-webhook-secret")
+SEND_TIMEOUT = float(os.getenv("PROVIDER_SEND_TIMEOUT", "30"))
+HEALTH_TIMEOUT = float(os.getenv("PROVIDER_HEALTH_TIMEOUT", "10"))
 CORS_ORIGINS = [
     origin.strip().rstrip("/")
     for origin in (os.getenv("CORS_ORIGINS") or "http://localhost:3000").split(",")
@@ -138,7 +140,10 @@ async def dispatch(message_id: int):
             "callback_url": f"{APP_BASE_URL}/api/webhooks/provider",
         }
         try:
-            async with httpx.AsyncClient(timeout=5) as client:
+            # Hosted providers on free tiers can take 20 seconds or more to
+            # wake from idle, so the send timeout is generous. A genuine
+            # timeout is still reported as a retryable failure.
+            async with httpx.AsyncClient(timeout=SEND_TIMEOUT) as client:
                 response = await client.post(f"{PROVIDER_URL}/messages", json=payload)
             if response.is_success:
                 provider_message = response.json()
@@ -239,7 +244,7 @@ def webhook(
 @app.get("/api/provider-health")
 async def provider_health(db: Session = Depends(get_db)):
     try:
-        async with httpx.AsyncClient(timeout=2) as client:
+        async with httpx.AsyncClient(timeout=HEALTH_TIMEOUT) as client:
             response = await client.get(f"{PROVIDER_URL}/health")
         operational = response.is_success
     except httpx.HTTPError:

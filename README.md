@@ -2,6 +2,18 @@
 
 A candidate communication platform for recruiters. It supports candidate management, individual and bulk messages, delivery status updates, failures, retries, and communication history.
 
+## Live demo
+
+| | |
+| --- | --- |
+| Application | <https://hunar-assessment.vercel.app> |
+| Backend API | <https://candidate-comms-api.onrender.com/docs> |
+| Dummy provider | <https://candidate-comms-provider.onrender.com/health> |
+
+The backend and the provider run on a free tier that suspends idle services, so
+the first request after a quiet period can take up to a minute while they wake.
+Later requests are immediate.
+
 ## Tech stack
 
 - Frontend: Next.js, React, TypeScript, Material UI
@@ -96,35 +108,47 @@ pnpm build
 
 ## Deploy
 
-Push the repository to GitHub, then create three services on a platform such as Railway using these root directories:
+The deployment uses Vercel for the frontend, Render for the two Python services,
+and Neon for Postgres.
 
-| Service | Root directory | Start command |
-| --- | --- | --- |
-| Frontend | `frontend` | `pnpm start` |
-| Backend | `backend` | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
-| Provider | `provider` | `uvicorn app:app --host 0.0.0.0 --port $PORT` |
+[render.yaml](render.yaml) describes both Python services, so Render's Blueprint
+flow creates them together and wires `PROVIDER_URL` and `APP_BASE_URL` between
+them automatically.
 
-Use `pnpm build` as the frontend build command. Use `pip install -r requirements.txt` for both Python service build commands.
+### Render, backend and provider
 
-Set these backend variables:
+Create a Blueprint from this repository and supply the values that are not in
+the file:
 
 ```env
-DATABASE_URL=postgresql://USER:PASSWORD@HOST.neon.tech/neondb?sslmode=require
-PROVIDER_URL=https://YOUR_PROVIDER_DOMAIN
-APP_BASE_URL=https://YOUR_BACKEND_DOMAIN
+# candidate-comms-api
+DATABASE_URL=postgresql://USER:PASSWORD@HOST-pooler.REGION.aws.neon.tech/neondb?sslmode=require
 PROVIDER_WEBHOOK_SECRET=USE_A_RANDOM_SECRET
 CORS_ORIGINS=https://YOUR_FRONTEND_DOMAIN
-```
 
-Set these variables on the other services:
-
-```env
-# Frontend
-NEXT_PUBLIC_API_URL=https://YOUR_BACKEND_DOMAIN
-
-# Provider
+# candidate-comms-provider
 WEBHOOK_SECRET=USE_THE_SAME_RANDOM_SECRET
 ```
+
+Creating the services by hand works too, with root directories `backend` and
+`provider`, `pip install -r requirements.txt` to build, and
+`uvicorn app.main:app --host 0.0.0.0 --port $PORT` and
+`uvicorn app:app --host 0.0.0.0 --port $PORT` to start. Set `PROVIDER_URL` and
+`APP_BASE_URL` yourself in that case.
+
+`APP_BASE_URL` must be the backend's own public URL, because the provider sends
+status updates back to it. `PROVIDER_WEBHOOK_SECRET` and `WEBHOOK_SECRET` must
+hold the same value, or every status update is rejected.
+
+### Vercel, frontend
+
+Import the repository with root directory `frontend` and set:
+
+```env
+NEXT_PUBLIC_API_URL=https://YOUR_BACKEND_DOMAIN
+```
+
+Next.js reads this at build time, so changing it later needs a new deployment.
 
 ### Database
 
@@ -147,6 +171,11 @@ or the database is lost on every redeployment.
 - Duplicate webhook updates are safe and do not change an already-current status.
 - Phone numbers use international format, such as `+919876543210`.
 - Provider health and retryable failures are included as bonus features.
+- Database hosts publish both IPv4 and IPv6 addresses while many container
+  platforms have no IPv6 route, so Postgres connections are pinned to IPv4.
+- Provider timeouts are generous, because a suspended service can take twenty
+  seconds or more to wake. `PROVIDER_SEND_TIMEOUT` and `PROVIDER_HEALTH_TIMEOUT`
+  override them.
 - The frontend polls every few seconds so webhook-driven status changes appear
   without a manual refresh.
 
