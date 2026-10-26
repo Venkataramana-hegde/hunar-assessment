@@ -61,6 +61,7 @@ async def lifespan(app: FastAPI):
                     Candidate(name="Neha Patel", email="neha@example.com", phone="+919988776655"),
                     Candidate(name="Rohan Mehta", email="rohan@example.com", phone="+919600008888"),
                     Candidate(name="Kavya Nair", email="kavya@example.com", phone="+919555557777"),
+                    Candidate(name="Vikram Rao", email="vikram@example.com", phone="+919400000000"),
                 ]
             )
             db.commit()

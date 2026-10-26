@@ -75,7 +75,7 @@ failure case can be demonstrated on demand.
 | Amit Kumar | `1234` | Temporary provider failure, retryable |
 | Kavya Nair | `7777` | Rate limited, retryable |
 | Rohan Mehta | `8888` | Delivery failed, permanent |
-| any candidate | `0000` | Invalid recipient, permanent |
+| Vikram Rao | `0000` | Invalid recipient, permanent |
 
 Stopping the provider service makes the next send fail as "communication service
 unavailable" and flips the provider health indicator.
