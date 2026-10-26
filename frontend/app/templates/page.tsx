@@ -169,9 +169,10 @@ export default function TemplatesPage() {
                 Save a message you send often and reuse it in one click.
               </Typography>
               <Button
+                variant="contained"
                 startIcon={<AddIcon />}
                 onClick={startCreate}
-                sx={{ mt: 2 }}
+                sx={{ mt: 2.5 }}
               >
                 New template
               </Button>

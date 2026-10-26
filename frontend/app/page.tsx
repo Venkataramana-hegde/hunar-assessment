@@ -243,9 +243,10 @@ export default function Dashboard() {
               </Typography>
               {!search && (
                 <Button
+                  variant="contained"
                   startIcon={<AddIcon />}
                   onClick={() => setAddOpen(true)}
-                  sx={{ mt: 2 }}
+                  sx={{ mt: 2.5 }}
                 >
                   Add candidate
                 </Button>

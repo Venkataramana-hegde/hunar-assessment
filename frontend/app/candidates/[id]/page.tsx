@@ -148,7 +148,12 @@ export default function CandidatePage({
                     <Typography color="text.secondary" variant="body2" mt={1}>
                       Start a conversation with {candidate.name}.
                     </Typography>
-                    <Button onClick={() => setCompose(true)} sx={{ mt: 2 }}>
+                    <Button
+                      variant="contained"
+                      startIcon={<MessageOutlinedIcon />}
+                      onClick={() => setCompose(true)}
+                      sx={{ mt: 2.5 }}
+                    >
                       Send first message
                     </Button>
                   </Box>
