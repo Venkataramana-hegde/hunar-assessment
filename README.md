@@ -66,6 +66,21 @@ pnpm dev
 
 Open <http://localhost:3000>. API documentation is available at <http://localhost:8000/docs>.
 
+### Configuration
+
+Each service reads its own `.env` file, and every setting has a working local
+default, so no configuration is needed to run the project locally. To change
+something, copy the example beside it:
+
+```bash
+cp backend/.env.example backend/.env
+cp provider/.env.example provider/.env
+cp frontend/.env.example frontend/.env
+```
+
+`backend/.env.example` documents every backend setting, including the Postgres
+connection string and the provider timeouts.
+
 The backend creates the SQLite database and adds five demo candidates on its first start.
 
 ## Demo scenarios
