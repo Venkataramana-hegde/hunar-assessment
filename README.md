@@ -81,7 +81,9 @@ cp frontend/.env.example frontend/.env
 `backend/.env.example` documents every backend setting, including the Postgres
 connection string and the provider timeouts.
 
-The backend creates the SQLite database and adds five demo candidates on its first start.
+On its first start the backend creates the database and adds seven demo
+candidates, chosen so that every delivery outcome below can be demonstrated
+without editing any data.
 
 ## Demo scenarios
 
@@ -100,8 +102,9 @@ A sixth case, "communication service unavailable", happens whenever the provider
 cannot be reached: stop the provider locally, or send while it is suspended on a
 free tier. The provider health indicator turns red at the same time.
 
-Selecting Rahul, Amit, Kavya, and Rohan together is the quickest way to see the
-bulk results screen report a different outcome for each candidate.
+Selecting Rahul, Amit, Kavya, Rohan, and Vikram together is the quickest way to
+see the bulk results screen report a different outcome for each candidate in one
+send.
 
 ## Tests and checks
 
